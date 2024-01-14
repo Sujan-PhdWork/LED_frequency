@@ -7,9 +7,9 @@ def Affine_trans(prev,curr):
 
 
     prev_pts = cv2.goodFeaturesToTrack(prev_gray,
-                                       maxCorners=200,
-                                       qualityLevel=0.01,
-                                       minDistance=30,
+                                       maxCorners=500,
+                                       qualityLevel=0.1,
+                                       minDistance=5,
                                        blockSize=3)
     
     curr_pts, status, err = cv2.calcOpticalFlowPyrLK(
