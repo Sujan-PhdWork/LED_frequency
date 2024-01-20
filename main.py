@@ -8,24 +8,62 @@ from transformation import Affine_trans
 start_playing=False
 frames=[]
 
+params = cv2.SimpleBlobDetector_Params()
+# Change thresholds
+params.minThreshold = 10
+params.maxThreshold = 200
+ 
+# # Filter by Area.
+params.filterByArea = True
+params.minArea = 100
+ 
+# # Filter by Circularity
+params.filterByCircularity = True
+params.minCircularity = 0.8
+ 
+# # Filter by Convexity
+params.filterByConvexity = True
+params.minConvexity = 0.95
+ 
+# # # Filter by Inertia
+# params.filterByInertia = True
+# params.minInertiaRatio = 0.8
 
 
-
+def keypoint_detection(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # gray=img.copy() 
+ 
+    # Set up the detector with default parameters.
+    detector = cv2.SimpleBlobDetector_create(params)
+ 
+    # Detect blobs.
+    keypoints = detector.detect(gray)
+    return keypoints
 
 
 def process_img(img):
+    # h,w=img.shape
     h,w,_=img.shape
     frames.append(img)
     
     if len(frames)==1:
        return None
 
-
     T=Affine_trans(frames[-2],frames[-1])
     # print(T)
     inv_T=np.linalg.inv(T)
     frames[-1] = cv2.warpAffine(frames[-1], inv_T[:2, :3], (w, h))
-    cv2.imshow("Improved_image",frames[-1])
+
+    
+    keypoints=keypoint_detection(frames[-1])
+    print(keypoints)
+
+    modified_frame = cv2.drawKeypoints(frames[-1], keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    cv2.imshow("Improved_image",modified_frame)
+    # cv2.imshow("Improved_image",frames[-1])
+
+    
     return frames[-1]
 
 
@@ -70,7 +108,8 @@ if __name__ =="__main__":
         if not ret:
             print("Video ended.")
             break
-
+        
+        # frame=frame[:,:,0]
         clone = frame.copy()
 
         # if not start_playing:
@@ -97,6 +136,7 @@ if __name__ =="__main__":
                         [1], event.ref_points[0][0]:event.ref_points[1][0]]
             
             simg=process_img(roi)
+            # h,w=roi.shape
             h,w,_=roi.shape
             if simg is None:
                 output_video = cv2.VideoWriter(

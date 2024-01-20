@@ -4,6 +4,8 @@ import numpy as np
 def Affine_trans(prev,curr):
     prev_gray = cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)
     curr_gray = cv2.cvtColor(curr, cv2.COLOR_BGR2GRAY)
+    # prev_gray=prev.copy()
+    # curr_gray=curr.copy()
 
 
     prev_pts = cv2.goodFeaturesToTrack(prev_gray,
