@@ -1,3 +1,2 @@
-# # Filter by Inertia
-# params.filterByInertia = True
-# params.minInertiaRatio = 0.8
+plt.ion() 
+# graph,=plt.plot([0],[0])
