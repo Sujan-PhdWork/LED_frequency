@@ -5,6 +5,11 @@ from transformation import Affine_trans
 import matplotlib.pyplot as plt
 
 
+from imutils import contours
+from skimage import measure
+import numpy as np
+import imutils
+
 # plt.ion() 
 # graph,=plt.plot([0],[0])
 
@@ -13,39 +18,6 @@ import matplotlib.pyplot as plt
 start_playing=False
 frames=[]
 
-params = cv2.SimpleBlobDetector_Params()
-# Change thresholds
-params.minThreshold = 10
-params.maxThreshold = 200
- 
-# # Filter by Area.
-params.filterByArea = True
-params.minArea = 100
- 
-# # Filter by Circularity
-params.filterByCircularity = True
-params.minCircularity = 0.8
- 
-# # Filter by Convexity
-params.filterByConvexity = True
-params.minConvexity = 0.95
- 
-# # # Filter by Inertia
-# params.filterByInertia = True
-# params.minInertiaRatio = 0.8
-blue_list=[]
-t_list=[]
-t=0
-def keypoint_detection(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # gray=img.copy() 
- 
-    # Set up the detector with default parameters.
-    detector = cv2.SimpleBlobDetector_create(params)
- 
-    # Detect blobs.
-    keypoints = detector.detect(gray)
-    return keypoints
 
 
 def process_img(img):
@@ -62,51 +34,65 @@ def process_img(img):
     inv_T=np.linalg.inv(T)
     frames[-1] = cv2.warpAffine(frames[-1], inv_T[:2, :3], (w, h))
     
-    # graph.remove()
-    color = ('b','g','r')
-    # for i in range(3):
+    image=frames[-1].copy()
+    gray=cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (11, 11), 0)
+
+
+    thresh = cv2.threshold(blurred, 240, 255, cv2.THRESH_BINARY)[1]
     
-    img_rgb = cv2.cvtColor(frames[-1], cv2.COLOR_BGR2RGB)
-    lower_blue = (100, 0, 0)
-    upper_blue = (255, 100, 100)
+    # video 3=190,255,1,4
+    # video 1=240,255,1,6
 
-    # Create a mask to extract red pixels
-    mask = cv2.inRange(img_rgb, lower_blue, upper_blue)
+    thresh = cv2.erode(thresh, None, iterations=1)
+    thresh = cv2.dilate(thresh, None, iterations=6)
 
-    # Count the number of white pixels in the mask
-    blue_pixel_count = cv2.countNonZero(mask)
+    # # to filter out the noise
+    labels = measure.label(thresh, connectivity=1, background=0)
+    mask = np.zeros(thresh.shape, dtype="uint8")
 
-    print(blue_pixel_count)
-    t_list.append(t)
-    blue_list.append(blue_pixel_count)
-    t+=1
+    # # print(labels)
+    for label in np.unique(labels):
+        # if this is the background label, ignore it
+        if label == 0:
+            continue
+        # otherwise, construct the label mask and count the
+        # number of pixels 
+        labelMask = np.zeros(thresh.shape, dtype="uint8")
+        labelMask[labels == label] = 255
+        numPixels = cv2.countNonZero(labelMask)
+        # if the number of pixels in the component is sufficiently
+        # large, then add it to our mask of "large blobs"
+        if numPixels > 180: # this can be variable and can be calculated using thresh
+            mask = cv2.add(mask, labelMask)
+        # cv2.imshow("new",labelMask)
+        # print(numPixels)
+        # cv2.waitKey(1000)
+    # cv2.imshow("masked led",mask)
+
+    # cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+	# cv2.CHAIN_APPROX_SIMPLE)
+    # cnts = imutils.grab_contours(cnts)
+    # cnts = contours.sort_contours(cnts)[0]
+
+    # for (i, c) in enumerate(cnts):
+    #     # draw the bright spot on the image
+    #     (x, y, w, h) = cv2.boundingRect(c)
+    #     ((cX, cY), radius) = cv2.minEnclosingCircle(c)
+    #     cv2.circle(image, (int(cX), int(cY)), int(radius),
+    #         (0, 0, 255), 3)
+    #     cv2.putText(image, "#{}".format(i + 1), (x, y - 5),
+    #         cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
 
 
 
-    # dst=frames[-1][:,:,0]-frames[-2][:,:,0]
-    # src= cv2.cvtColor(frames[-1], cv2.COLOR_BGR2GRAY)
-    # dst = cv2.equalizeHist(src)
-    # hist = cv2.calcHist([dst],[0],None,[256],[0,256])
-    # graph,=plt.plot(hist,color=color[2])
-    # # plt.ylim([0,100])
-    # plt.xlim([0,100])
-    # plt.pause(0.25)
 
     # graph.remove()
-    # for i in range(3):
-    #     histr = cv2.calcHist([frame[-1]],[i],None,[256],[0,256])
-    #     .plot(histr)
-    #     plt.xlim([0,256])
-    #     plt.show()
 
-    # keypoints=keypoint_detection(frames[-1])
-    # print(keypoints)
 
-    # modified_frame = cv2.drawKeypoints(frames[-1], keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    # cv2.imshow("Improved_image",dst)
-
-    cv2.imshow("Improved_image",frames[-1])
-
+    
+    cv2.imshow("Improved_image",thresh)
+    cv2.waitKey(100)
     
     return frames[-1]
 
@@ -118,7 +104,7 @@ def process_img(img):
 
 if __name__ =="__main__":
     # Open a video file
-    video_capture = cv2.VideoCapture('data/video1.mp4')
+    video_capture = cv2.VideoCapture('data/video2.mp4')
 
     # Check if the video capture object is successfully opened
     if not video_capture.isOpened():
@@ -204,5 +190,5 @@ if __name__ =="__main__":
     video_capture.release()
     output_video.release()
     cv2.destroyAllWindows()
-    plt.plot(t_list,blue_list)
-    plt.show()
+    # plt.plot(t_list,blue_list)
+    # plt.show()
