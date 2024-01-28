@@ -70,19 +70,19 @@ def process_img(img):
         # cv2.waitKey(1000)
     # cv2.imshow("masked led",mask)
 
-    # cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-	# cv2.CHAIN_APPROX_SIMPLE)
-    # cnts = imutils.grab_contours(cnts)
-    # cnts = contours.sort_contours(cnts)[0]
+    cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+	cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+    cnts = contours.sort_contours(cnts)[0]
 
-    # for (i, c) in enumerate(cnts):
-    #     # draw the bright spot on the image
-    #     (x, y, w, h) = cv2.boundingRect(c)
-    #     ((cX, cY), radius) = cv2.minEnclosingCircle(c)
-    #     cv2.circle(image, (int(cX), int(cY)), int(radius),
-    #         (0, 0, 255), 3)
-    #     cv2.putText(image, "#{}".format(i + 1), (x, y - 5),
-    #         cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
+    for (i, c) in enumerate(cnts):
+        # draw the bright spot on the image
+        (x, y, w, h) = cv2.boundingRect(c)
+        ((cX, cY), radius) = cv2.minEnclosingCircle(c)
+        cv2.circle(image, (int(cX), int(cY)), int(radius),
+            (0, 0, 255), 3)
+        cv2.putText(image, "#{}".format(i + 1), (x, y - 5),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
 
 
 
@@ -91,7 +91,7 @@ def process_img(img):
 
 
     
-    cv2.imshow("Improved_image",thresh)
+    cv2.imshow("Improved_image",image)
     cv2.waitKey(100)
     
     return frames[-1]
@@ -104,7 +104,7 @@ def process_img(img):
 
 if __name__ =="__main__":
     # Open a video file
-    video_capture = cv2.VideoCapture('data/video2.mp4')
+    video_capture = cv2.VideoCapture('data/video1.mp4')
 
     # Check if the video capture object is successfully opened
     if not video_capture.isOpened():
